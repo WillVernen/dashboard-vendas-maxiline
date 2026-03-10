@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
+import os
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONFIGURAÇÃO DA PÁGINA
@@ -23,8 +24,13 @@ st.set_page_config(
 # LISTA FIXA DE CONSULTORES
 # ══════════════════════════════════════════════════════════════════════════════
 CONSULTORES_FIXOS = [
-    "Anderson", "André", "Cleiton", "Daniel",
-    "Francis", "Rodrigues", "Zarlon", "Sônia (E-Comerce)",
+    "Anderson Fortaleza", "Anderson Interior", "Anderson Daniel",
+    "André Fortaleza", "André interior", "André Brito",
+    "Cleiton Bezerra", "Daniel Oliveira", "Francis Egley",
+    "Francis Fortaleza", "Francis Interior", "Rodrigues",
+    "Zarlon Mendes", "Sonia Maria", "Julio Araújo",
+    "Wellington Martins", "William Lima", "Nycole Camelo",
+    "Nathane Oliveira", "Curso", "Empresa",
 ]
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -177,8 +183,57 @@ def aplicar_tema(dark_mode: bool):
             background: {card_bg};
             border-right: 1px solid {border_color};
         }}
-        section[data-testid="stSidebar"] .stMarkdown p {{
-            color: {text_color};
+        section[data-testid="stSidebar"] .stMarkdown p,
+        section[data-testid="stSidebar"] .stMarkdown li,
+        section[data-testid="stSidebar"] .stMarkdown h1,
+        section[data-testid="stSidebar"] .stMarkdown h2,
+        section[data-testid="stSidebar"] .stMarkdown h3,
+        section[data-testid="stSidebar"] .stMarkdown h4,
+        section[data-testid="stSidebar"] .stMarkdown strong {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] .stSelectbox label,
+        section[data-testid="stSidebar"] .stMultiSelect label,
+        section[data-testid="stSidebar"] .stRadio label,
+        section[data-testid="stSidebar"] .stDateInput label,
+        section[data-testid="stSidebar"] .stFileUploader label,
+        section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+        section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] label {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span,
+        section[data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] span,
+        section[data-testid="stSidebar"] [data-baseweb="input"] input,
+        section[data-testid="stSidebar"] [data-baseweb="tag"] span {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label span,
+        section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .streamlit-expanderHeader,
+        section[data-testid="stSidebar"] .streamlit-expanderHeader p,
+        section[data-testid="stSidebar"] details summary span,
+        section[data-testid="stSidebar"] details p {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .stFileUploader span,
+        section[data-testid="stSidebar"] .stFileUploader p,
+        section[data-testid="stSidebar"] .stFileUploader small {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .stToggle label span,
+        section[data-testid="stSidebar"] [data-testid="stToggleLabel"] {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] button span,
+        section[data-testid="stSidebar"] button p {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"] .stCaption,
+        section[data-testid="stSidebar"] small {{
+            color: {subtitle_color} !important;
         }}
 
         /* ── Plotly chart containers ────────────────────────────── */
@@ -298,7 +353,18 @@ st.markdown("""
 # ══════════════════════════════════════════════════════════════════════════════
 # PROCESSAMENTO PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
-if uploaded_file is None:
+ARQUIVO_PADRAO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wd_maxiline.xlsx")
+
+if uploaded_file is not None:
+    df_original = carregar_dados(uploaded_file)
+    if df_original is None:
+        st.stop()
+elif os.path.exists(ARQUIVO_PADRAO):
+    df_original = carregar_dados(open(ARQUIVO_PADRAO, "rb"))
+    if df_original is None:
+        st.stop()
+    st.caption("📂 Usando dados de exemplo: **wd_maxiline.xlsx** — Envie um arquivo na sidebar para usar seus próprios dados.")
+else:
     st.markdown("""
     <div style="text-align:center; padding: 60px 20px;">
         <p style="font-size: 3rem; margin-bottom: 8px;">📂</p>
@@ -310,10 +376,6 @@ if uploaded_file is None:
         </p>
     </div>
     """, unsafe_allow_html=True)
-    st.stop()
-
-df_original = carregar_dados(uploaded_file)
-if df_original is None:
     st.stop()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -466,46 +528,113 @@ with col4:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMPARATIVO MENSAL (se tiver mais de 1 mês)
+# COMPARATIVO MENSAL (seleção de mês A vs mês B)
 # ══════════════════════════════════════════════════════════════════════════════
-meses_no_filtro = df["Data"].dt.to_period("M").unique()
-if len(meses_no_filtro) >= 2 and filtro_mes == "Todos os Meses":
+meses_no_filtro = sorted(df_original["Data"].dt.to_period("M").unique())
+if len(meses_no_filtro) >= 2:
     st.markdown('<div class="section-title">📅 Comparativo Mensal</div>', unsafe_allow_html=True)
 
-    comparativo = df.groupby(df["Data"].dt.to_period("M")).agg(
-        Vendas=("Valor Realizado", "sum"),
-        Meta=("Meta", "sum"),
-        Qtd_Vendas=("Quantidade Vendas", "sum"),
-        Novos=("Clientes Novos/Reativação", "sum"),
-    ).reset_index()
-    comparativo["Mês"] = comparativo["Data"].apply(lambda p: f"{MESES_PT.get(p.month, p.month)} {p.year}")
-    comparativo["% Meta"] = (comparativo["Vendas"] / comparativo["Meta"] * 100).round(1)
+    # Selectboxes para escolher os meses a comparar
+    opcoes_meses_comp = [f"{MESES_PT.get(m.month, m.month)} {m.year}" for m in meses_no_filtro]
+    col_ma, col_mb = st.columns(2)
+    with col_ma:
+        idx_a = max(0, len(opcoes_meses_comp) - 2)  # penúltimo mês como default
+        mes_a_label = st.selectbox("📆 Mês A (referência)", opcoes_meses_comp, index=idx_a)
+    with col_mb:
+        idx_b = len(opcoes_meses_comp) - 1  # último mês como default
+        mes_b_label = st.selectbox("📆 Mês B (comparar com)", opcoes_meses_comp, index=idx_b)
 
-    cols_comp = st.columns(len(comparativo))
-    for idx, (_, row) in enumerate(comparativo.iterrows()):
-        with cols_comp[idx]:
-            cor_m = VERDE_META if row["% Meta"] >= 100 else (AMARELO if row["% Meta"] >= 70 else VERMELHO)
-            st.markdown(kpi_card(
-                row["Mês"],
-                formatar_brl(row["Vendas"]),
-                f"Meta: {row['% Meta']}% · {int(row['Qtd_Vendas'])} vendas · {int(row['Novos'])} novos",
-                cor_m,
-            ), unsafe_allow_html=True)
+    mes_a_periodo = meses_no_filtro[opcoes_meses_comp.index(mes_a_label)]
+    mes_b_periodo = meses_no_filtro[opcoes_meses_comp.index(mes_b_label)]
 
-    # Variação entre meses
-    if len(comparativo) == 2:
-        vendas_ant = comparativo.iloc[0]["Vendas"]
-        vendas_atu = comparativo.iloc[1]["Vendas"]
-        variacao = ((vendas_atu - vendas_ant) / vendas_ant * 100) if vendas_ant > 0 else 0
+    # Filtrar dados de cada mês (dos dados originais, independente do filtro de consultor)
+    df_mes_a = df_original[df_original["Data"].dt.to_period("M") == mes_a_periodo]
+    df_mes_b = df_original[df_original["Data"].dt.to_period("M") == mes_b_periodo]
+
+    # Aplicar filtro de consultores se ativo
+    if filtro_consultores:
+        df_mes_a = df_mes_a[df_mes_a["Nome do Consultor"].isin(filtro_consultores)]
+        df_mes_b = df_mes_b[df_mes_b["Nome do Consultor"].isin(filtro_consultores)]
+
+    # Totais
+    totais_a = {
+        "Vendas": df_mes_a["Valor Realizado"].sum(),
+        "Meta": df_mes_a["Meta"].sum(),
+        "Qtd": int(df_mes_a["Quantidade Vendas"].sum()),
+        "Novos": int(df_mes_a["Clientes Novos/Reativação"].sum()),
+    }
+    totais_b = {
+        "Vendas": df_mes_b["Valor Realizado"].sum(),
+        "Meta": df_mes_b["Meta"].sum(),
+        "Qtd": int(df_mes_b["Quantidade Vendas"].sum()),
+        "Novos": int(df_mes_b["Clientes Novos/Reativação"].sum()),
+    }
+    pct_a = round((totais_a["Vendas"] / totais_a["Meta"] * 100), 1) if totais_a["Meta"] > 0 else 0
+    pct_b = round((totais_b["Vendas"] / totais_b["Meta"] * 100), 1) if totais_b["Meta"] > 0 else 0
+
+    # Cards lado a lado
+    col_card_a, col_card_b = st.columns(2)
+    with col_card_a:
+        cor_a = VERDE_META if pct_a >= 100 else (AMARELO if pct_a >= 70 else VERMELHO)
+        st.markdown(kpi_card(
+            mes_a_label,
+            formatar_brl(totais_a["Vendas"]),
+            f"Meta: {pct_a}% · {totais_a['Qtd']} vendas · {totais_a['Novos']} novos",
+            cor_a,
+        ), unsafe_allow_html=True)
+    with col_card_b:
+        cor_b = VERDE_META if pct_b >= 100 else (AMARELO if pct_b >= 70 else VERMELHO)
+        st.markdown(kpi_card(
+            mes_b_label,
+            formatar_brl(totais_b["Vendas"]),
+            f"Meta: {pct_b}% · {totais_b['Qtd']} vendas · {totais_b['Novos']} novos",
+            cor_b,
+        ), unsafe_allow_html=True)
+
+    # Variação entre os meses
+    if totais_a["Vendas"] > 0:
+        variacao = ((totais_b["Vendas"] - totais_a["Vendas"]) / totais_a["Vendas"] * 100)
         seta = "↑" if variacao >= 0 else "↓"
         cor_var = "comparativo-up" if variacao >= 0 else "comparativo-down"
         st.markdown(
             f'<p style="text-align:center; margin-top:12px; font-size:1rem;">'
             f'Variação: <span class="{cor_var}">{seta} {abs(variacao):.1f}%</span> '
-            f'de {comparativo.iloc[0]["Mês"]} para {comparativo.iloc[1]["Mês"]}'
+            f'de {mes_a_label} para {mes_b_label}'
             f'</p>',
             unsafe_allow_html=True,
         )
+
+    # Comparativo por consultor
+    if not df_mes_a.empty and not df_mes_b.empty:
+        st.markdown('<div class="section-title">👤 Comparativo por Consultor</div>', unsafe_allow_html=True)
+        comp_a = df_mes_a.groupby("Nome do Consultor")["Valor Realizado"].sum().reset_index()
+        comp_a.columns = ["Consultor", "Vendas_A"]
+        comp_b = df_mes_b.groupby("Nome do Consultor")["Valor Realizado"].sum().reset_index()
+        comp_b.columns = ["Consultor", "Vendas_B"]
+        comp = pd.merge(comp_a, comp_b, on="Consultor", how="outer").fillna(0)
+        comp["Variação %"] = comp.apply(
+            lambda r: round((r["Vendas_B"] - r["Vendas_A"]) / r["Vendas_A"] * 100, 1) if r["Vendas_A"] > 0 else 0, axis=1
+        )
+        comp = comp.sort_values("Variação %", ascending=False).reset_index(drop=True)
+
+        comp_html = ""
+        for _, row in comp.iterrows():
+            var = row["Variação %"]
+            seta_c = "↑" if var >= 0 else "↓"
+            cor_c = VERDE_META if var >= 0 else VERMELHO
+            comp_html += f"""
+            <div class="ranking-row">
+                <span class="ranking-name">{row['Consultor']}</span>
+                <span style="flex:1; font-size:0.85rem; opacity:0.7;">
+                    {mes_a_label}: {formatar_brl(row['Vendas_A'])} &nbsp;→&nbsp;
+                    {mes_b_label}: {formatar_brl(row['Vendas_B'])}
+                </span>
+                <span class="ranking-pct" style="background: {cor_c}22; color: {cor_c};">
+                    {seta_c} {abs(var):.1f}%
+                </span>
+            </div>
+            """
+        st.markdown(comp_html, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -565,35 +694,29 @@ fig_bar.update_layout(
 st.plotly_chart(fig_bar, use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GRÁFICO DE TENDÊNCIA — Vendas Diárias / Semanais
+# GRÁFICO DE TENDÊNCIA — Vendas Mensais / Anuais
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown('<div class="section-title">📈 Tendência de Vendas</div>', unsafe_allow_html=True)
 
 col_agg, _ = st.columns([1, 3])
 with col_agg:
-    agregacao = st.radio("Agrupar por:", ["Diário", "Semanal", "Mensal"], horizontal=True)
+    agregacao = st.radio("Agrupar por:", ["Mensal", "Anual"], horizontal=True)
 
 vendas_tempo = df.copy()
-if agregacao == "Semanal":
-    vendas_tempo["Período"] = vendas_tempo["Data"].dt.to_period("W").apply(lambda p: p.start_time)
+if agregacao == "Anual":
+    vendas_tempo["Período"] = vendas_tempo["Data"].dt.to_period("Y").apply(lambda p: p.start_time)
     vendas_agg = vendas_tempo.groupby("Período").agg(
         Vendas=("Valor Realizado", "sum"),
         Meta=("Meta", "sum"),
     ).reset_index()
     x_col = "Período"
-elif agregacao == "Mensal":
+else:  # Mensal
     vendas_tempo["Período"] = vendas_tempo["Data"].dt.to_period("M").apply(lambda p: p.start_time)
     vendas_agg = vendas_tempo.groupby("Período").agg(
         Vendas=("Valor Realizado", "sum"),
         Meta=("Meta", "sum"),
     ).reset_index()
     x_col = "Período"
-else:
-    vendas_agg = vendas_tempo.groupby("Data").agg(
-        Vendas=("Valor Realizado", "sum"),
-        Meta=("Meta", "sum"),
-    ).reset_index()
-    x_col = "Data"
 
 fig_line = go.Figure()
 fig_line.add_trace(go.Scatter(
