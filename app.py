@@ -353,7 +353,7 @@ st.markdown("""
 # ══════════════════════════════════════════════════════════════════════════════
 # PROCESSAMENTO PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
-ARQUIVO_PADRAO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wd_maxiline.xlsx")
+ARQUIVO_PADRAO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dados_exemplo.xlsx")
 
 if uploaded_file is not None:
     df_original = carregar_dados(uploaded_file)
@@ -363,7 +363,7 @@ elif os.path.exists(ARQUIVO_PADRAO):
     df_original = carregar_dados(open(ARQUIVO_PADRAO, "rb"))
     if df_original is None:
         st.stop()
-    st.caption("📂 Usando dados de exemplo: **wd_maxiline.xlsx** — Envie um arquivo na sidebar para usar seus próprios dados.")
+    st.caption("📂 Usando dados de exemplo: **dados_exemplo.xlsx** — Envie um arquivo na sidebar para usar seus próprios dados.")
 else:
     st.markdown("""
     <div style="text-align:center; padding: 60px 20px;">

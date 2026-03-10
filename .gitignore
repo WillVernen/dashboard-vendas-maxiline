@@ -30,3 +30,6 @@ desktop.ini
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Dados reais (não publicar)
+wd_maxiline.xlsx
